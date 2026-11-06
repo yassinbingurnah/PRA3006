@@ -1,0 +1,39 @@
+# SPARQL ideas: 
+# 1. Which proteins involved in osteoblast differentiation or ossification are already targeted by existing drugs?
+# 2. which existing drugs interact with proteins involved in collagen fibril organization. how do they affect the healing process
+# final choice is 2
+
+# query whats associated with collagen type I alpha 1 chain to find out some more
+
+SELECT ?propLabel ?valueLabel
+WHERE {
+  ?protein wdt:P352 "P02452" .           # find a protein with the ID p02452 (collagen in humans)
+  ?protein ?p ?value .                   # what
+  ?prop wikibase:directClaim ?p .
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+}
+
+# gave 100 results, nothing of much use though
+# Developing query, below query selects all drugs that interact with proteins involved in wound healing, fibril organisation or ECM organization.
+
+SELECT DISTINCT ?drug ?drugLabel ?protein ?proteinLabel ?process ?processLabel
+WHERE {
+  VALUES ?goID {
+    "GO:0030199"   # collagen fibril organization
+    "GO:0030198"   # extracellular matrix organization
+    "GO:0042060"   # wound healing
+  }
+  ?process wdt:P686 ?goID .               # find each of those processes
+  ?protein wdt:P682 ?process .            # proteins involved in any of them
+
+  { ?drug wdt:P129 ?protein . }           # drug recorded as interacting with protein
+  UNION
+  { ?protein wdt:P129 ?drug . }           # ...or protein recorded as interacting with drug
+
+  ?drug wdt:P715 ?drugbankID .            # keep only things that have a DrugBank ID 
+
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+}
+ORDER BY ?processLabel ?drugLabel
+
+#245 drugs found and descriptions of what they do
