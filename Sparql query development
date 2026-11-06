@@ -16,7 +16,7 @@ WHERE {
 # gave 100 results, nothing of much use though
 # Developing query, below query selects all drugs that interact with proteins involved in wound healing, fibril organisation or ECM organization.
 
-SELECT DISTINCT ?drugLabel ?proteinLabel ?processLabel
+SELECT DISTINCT ?drug ?drugLabel ?protein ?proteinLabel ?process ?processLabel
 WHERE {
   VALUES ?goID {
     "GO:0030199"   # collagen fibril organization
