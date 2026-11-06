@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapping Drug interactions - collagen tissue healing</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+
+<style>
+  /* ---------- Colour palette & base settings ---------- */
+  :root {
+    --bg: #1c1b1a;
+    --bg-gradient: radial-gradient(circle at 20% 10%, #2a2826 0%, #1c1b1a 55%, #141312 100%);
+    --panel: rgba(255, 255, 255, 0.03);
+    --panel-border: rgba(255, 255, 255, 0.09);
+    --text: #ece9e4;
+    --text-muted: #a8a29e;
+    --accent-1: #d6d3d1;   /* light stone */
+    --accent-2: #a8a29e;   /* warm grey */
+    --accent-3: #d9b98c;   /* soft sand (highlights) */
+    --drug: #d9b98c;       /* sand */
+    --protein: #8fb3c9;    /* muted blue */
+    --process: #c98f8f;    /* muted rose */
+    --radius: 18px;
+    --shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+    --font: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html, body {
+    min-height: 100%;
+  }
+
+  body {
+    font-family: var(--font);
+    color: var(--text);
+    background: var(--bg);
+    background-image: var(--bg-gradient);
+    background-attachment: fixed;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 48px 16px 64px;
+    line-height: 1.5;
+  }
+
+  /* ---------- Page container ---------- */
+  .container {
+    width: 100%;
+    max-width: 1100px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 32px;
+  }
+
+  /* ---------- Title ---------- */
+  h1 {
+    font-size: clamp(2rem, 5vw, 3.4rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    text-align: center;
+    background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .subtitle {
+    margin-top: -20px;
+    color: var(--text-muted);
+    font-size: 1.05rem;
+    text-align: center;
+    max-width: 640px;
+  }
+
+  /* ---------- Network graph panel ---------- */
+  #network {
+    position: relative;
+    width: 100%;
+    height: 600px;
+    background: var(--panel);
+    border: 1px solid var(--panel-border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(6px);
+    overflow: hidden;
+  }
+
+  #network svg,
+  #network canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: grab;
+  }
+
+  #network svg:active {
+    cursor: grabbing;
+  }
+
+  /* Links (edges) */
+  .link {
+    stroke: rgba(168, 162, 158, 0.35);
+    stroke-width: 1.2px;
+    transition: stroke 0.2s, stroke-opacity 0.2s;
+  }
+
+  .link.highlighted {
+    stroke: var(--accent-3);
+    stroke-width: 2px;
+  }
+
+  /* Nodes */
+  .node circle {
+    fill: var(--accent-1);
+    stroke: var(--bg);
+    stroke-width: 1.5px;
+    transition: fill 0.2s, r 0.2s;
+    filter: drop-shadow(0 0 5px rgba(214, 211, 209, 0.35));
+  }
+
+  /* Node colours by type (after `.node circle`, before the hover rule so hover still wins) */
+  .node.drug circle    { fill: var(--drug); }
+  .node.protein circle { fill: var(--protein); }
+  .node.process circle { fill: var(--process); }
+
+  .node:hover circle {
+    fill: var(--accent-3);
+    filter: drop-shadow(0 0 8px rgba(217, 185, 140, 0.6));
+  }
+
+  .node text {
+    fill: var(--text-muted);
+    font-size: 11px;
+    pointer-events: none;
+    user-select: none;
+    paint-order: stroke;
+    stroke: var(--bg);
+    stroke-width: 3px;
+    stroke-linejoin: round;
+  }
+
+  /* Legend */
+  #legend {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 10;
+    background: rgba(28, 27, 26, 0.85);
+    border: 1px solid var(--panel-border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  #legend h3 {
+    font-size: 0.9rem;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
+
+  /* Faded state when another node is selected */
+  .faded {
+    opacity: 0.15;
+  }
+
+  /* Tooltip */
+  .tooltip {
+    position: absolute;
+    z-index: 100;
+    pointer-events: none;
+    padding: 8px 12px;
+    background: rgba(28, 27, 26, 0.95);
+    border: 1px solid var(--panel-border);
+    border-radius: 10px;
+    font-size: 0.85rem;
+    color: var(--text);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .tooltip.visible {
+    opacity: 1;
+  }
+
+  /* ---------- Buttons ---------- */
+  .button-row {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .btn {
+    display: inline-block;
+    min-width: 220px;
+    padding: 14px 28px;
+    border: none;
+    border-radius: 999px;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 600;
+    text-align: center;
+    text-decoration: none;
+    color: #fff;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  }
+
+  .btn-primary {
+    background: var(--accent-1);
+    color: #1c1b1a;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--text);
+    border: 1.5px solid var(--accent-2);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  }
+
+  .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
+
+  .btn:hover {
+    transform: translateY(-3px);
+    filter: brightness(1.1);
+  }
+
+  .btn:active {
+    transform: translateY(0);
+  }
+
+  .btn:focus-visible {
+    outline: 3px solid var(--accent-3);
+    outline-offset: 3px;
+  }
+
+  /* ---------- Small screens ---------- */
+  @media (max-width: 600px) {
+    body {
+      padding: 32px 16px 48px;
+    }
+
+    #network {
+      height: 420px;
+    }
+
+    .btn {
+      width: 100%;
+      min-width: 0;
+    }
+  }
+</style>
+
+</head> 
+<!-- html part -->
+<body>
+
+<div class="container">
+  <h1>Mapping Drug interactions - collagen tissue healing</h1>
+  <div id="network">
+    <div id="legend">
+      <h3>Legend</h3>
+      <div class="legend-item"><div class="legend-color" style="background: var(--drug);"></div>Drug</div>
+      <div class="legend-item"><div class="legend-color" style="background: var(--protein);"></div>Protein</div>
+      <div class="legend-item"><div class="legend-color" style="background: var(--process);"></div>Biological process</div>
+    </div>
+  </div>
+  <div class="tooltip"></div>
+</div>
+
+<script>
+
+const sparqlEndpoint = "https://query.wikidata.org/sparql"; // SPARQL endpoint to query Wikidata 
+const sparqlQuery = `
+SELECT DISTINCT ?drug ?drugLabel ?protein ?proteinLabel ?process ?processLabel
+WHERE {
+  VALUES ?goID {
+    "GO:0030199"   # collagen fibril organization
+    "GO:0030198"   # extracellular matrix organization
+    "GO:0042060"   # wound healing
+  }
+  ?process wdt:P686 ?goID .               
+  ?protein wdt:P682 ?process .            
+
+  { ?drug wdt:P129 ?protein . }         
+  UNION
+  { ?protein wdt:P129 ?drug . }           
+
+  ?drug wdt:P715 ?drugbankID .            # keep only things that have a DrugBank ID 
+
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
+}
+ORDER BY ?processLabel ?drugLabel   
+
+`;  
+
+fetch(`${sparqlEndpoint}?query=${encodeURIComponent(sparqlQuery)}&format=json`)
+  .then(response => response.json())
+  .then(data => {
+    const results = data.results.bindings;
+    console.log("SPARQL query results:", results);
+
+    const nodes = []; // Array to hold unique nodes (drugs, proteins AND processes)
+    const links = []; // Array to hold links (interactions)
+
+    results.forEach(result => {
+      const drug = result.drug.value;
+      const protein = result.protein.value;
+      const process = result.process.value;
+
+      // Add unique nodes
+      if (!nodes.some(node => node.id === drug)) {
+        nodes.push({ id: drug, label: result.drugLabel.value, type: "drug" });
+      }
+      if (!nodes.some(node => node.id === protein)) {
+        nodes.push({ id: protein, label: result.proteinLabel.value, type: "protein" });
+      }
+      if (!nodes.some(node => node.id === process)) {
+        nodes.push({ id: process, label: result.processLabel.value, type: "process" });
+      }
+
+      // Add unique links
+      if (!links.some(l => l.source === drug && l.target === protein)) {
+        links.push({ source: drug, target: protein });      // drug targets protein
+      }
+      if (!links.some(l => l.source === protein && l.target === process)) {
+        links.push({ source: protein, target: process });   // protein is part of process
+      }
+    });
+
+    console.log("Nodes:", nodes);
+    console.log("Links:", links);
+
+    createInteractiveNetwork(nodes, links);
+  })
+  .catch(error => {
+    console.error("Error fetching SPARQL query results:", error);
+  });
+
+function createInteractiveNetwork(nodes, links) {
+  console.log("Drawing network with", nodes.length, "nodes and", links.length, "links");
+
+  const container = document.getElementById("network");
+  const width = container.clientWidth;
+  const height = container.clientHeight;
+  const tooltip = d3.select(".tooltip");
+
+  // 1. Count connections (links still hold ID strings here) and remember neighbours
+  const neighbors = new Map(nodes.map(n => [n.id, new Set([n.id])]));
+  nodes.forEach(n => n.degree = 0);
+  const byId = new Map(nodes.map(n => [n.id, n]));
+  links.forEach(l => {
+    byId.get(l.source).degree++;
+    byId.get(l.target).degree++;
+    neighbors.get(l.source).add(l.target);
+    neighbors.get(l.target).add(l.source);
+  });
+
+  // 2. One helper for node size
+  function r(d) {
+    if (d.type === "process") return 16;
+    if (d.type === "drug") return 4;
+    return 4 + 1.5 * Math.sqrt(d.degree);
+  }
+
+  // 3. Pin the process nodes at the corners of a large triangle
+  const processes = nodes.filter(d => d.type === "process");
+  processes.forEach((d, i) => {
+    const angle = -Math.PI / 2 + i * 2 * Math.PI / processes.length;
+    d.fx = 0.35 * width * Math.cos(angle);
+    d.fy = 0.35 * height * Math.sin(angle);
+  });
+
+  // 4. Forces
+  const isProcessLink = l => (l.target.type || byId.get(l.target).type) === "process";
+  const simulation = d3.forceSimulation(nodes)
+    .force("link", d3.forceLink(links).id(d => d.id)
+      .distance(l => isProcessLink(l) ? 140 : 25)
+      .strength(l => isProcessLink(l) ? 0.3 : 1))
+    .force("charge", d3.forceManyBody().strength(-50))
+    .force("collide", d3.forceCollide(d => r(d) + 2));
+
+  // append (not replace) so the legend inside #network survives
+  const svg = d3.select("#network").append("svg")
+    .attr("viewBox", [-width / 2, -height / 2, width, height]);
+
+  const g = svg.append("g");
+  const zoom = d3.zoom().scaleExtent([0.3, 5])
+    .on("zoom", event => g.attr("transform", event.transform));
+  svg.call(zoom);
+  // 8. Start a little zoomed out (viewBox is centred on 0,0, so this zooms about the centre)
+  svg.call(zoom.transform, d3.zoomIdentity.scale(0.8));
+
+  const link = g.append("g")
+    .selectAll("line")
+    .data(links)
+    .join("line")
+    .attr("class", "link");
+
+  const node = g.append("g")
+    .selectAll("g")
+    .data(nodes)
+    .join("g")
+    .attr("class", d => "node " + d.type)
+    .call(d3.drag()
+      .on("start", dragstarted)
+      .on("drag", dragged)
+      .on("end", dragended));
+
+  node.append("circle")
+    .attr("r", r);
+
+  // 5. Labels: all processes, proteins with degree >= 5, never drugs
+  node.filter(d => d.type === "process" || (d.type === "protein" && d.degree >= 5))
+    .append("text")
+    .text(d => d.label)
+    .attr("x", d => r(d) + 3)
+    .attr("y", 4)
+    .style("font-size", d => d.type === "process" ? "14px" : null)
+    .style("font-weight", d => d.type === "process" ? "bold" : null)
+    .style("fill", d => d.type === "process" ? "var(--text)" : null);
+
+  node.on("mouseover", (event, d) => {
+      const extra = d.type === "drug" ? "" : `<br>${d.degree} connections`;
+      tooltip.classed("visible", true)
+        .html(`<strong>${d.label}</strong><br>${d.type}${extra}`)
+        .style("left", (event.pageX + 12) + "px")
+        .style("top", (event.pageY - 12) + "px");
+    })
+    .on("mouseout", () => tooltip.classed("visible", false));
+
+  // 7. Click a node to focus on it and its neighbours; click the background to reset
+  node.on("click", (event, d) => {
+    event.stopPropagation();
+    const keep = neighbors.get(d.id);
+    node.classed("faded", n => !keep.has(n.id));
+    link.classed("highlighted", l => keep.has(l.source.id) && keep.has(l.target.id) && (l.source === d || l.target === d))
+        .classed("faded", l => !(l.source === d || l.target === d));
+  });
+  svg.on("click", () => {
+    node.classed("faded", false);
+    link.classed("highlighted", false).classed("faded", false);
+  });
+
+  simulation.on("tick", () => {
+    link
+      .attr("x1", d => d.source.x)
+      .attr("y1", d => d.source.y)
+      .attr("x2", d => d.target.x)
+      .attr("y2", d => d.target.y);
+    node.attr("transform", d => `translate(${d.x},${d.y})`);
+  });
+
+  function dragstarted(event) {
+    if (!event.active) simulation.alphaTarget(0.3).restart();
+    event.subject.fx = event.subject.x;
+    event.subject.fy = event.subject.y;
+  }
+  function dragged(event) {
+    event.subject.fx = event.x;
+    event.subject.fy = event.y;
+  }
+  function dragended(event) {
+    if (!event.active) simulation.alphaTarget(0);
+    event.subject.fx = null;
+    event.subject.fy = null;
+  }
+}
+
+
+</script>
+
+</body>
+</html>
