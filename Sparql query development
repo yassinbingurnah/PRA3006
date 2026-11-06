@@ -35,3 +35,5 @@ WHERE {
   SERVICE wikibase:label { bd:serviceParam wikibase:language "en". }
 }
 ORDER BY ?processLabel ?drugLabel
+
+#245 drugs found and descriptions of what they do
