@@ -259,6 +259,14 @@
     outline-offset: 3px;
   }
 
+  /* Current page: button is shown but not clickable */
+  .btn[aria-disabled="true"] {
+    opacity: 0.4;
+    cursor: default;
+    pointer-events: none;
+    box-shadow: none;
+  }
+
   /* ---------- Small screens ---------- */
   @media (max-width: 600px) {
     body {
@@ -282,6 +290,12 @@
 
 <div class="container">
   <h1>Mapping Drug interactions - collagen tissue healing</h1>
+  <nav class="button-row">
+    <!-- Already on the home page, so Home is disabled here -->
+    <a class="btn btn-primary" href="Code.HTML" aria-current="page" aria-disabled="true" tabindex="-1">Home</a>
+    <a class="btn btn-secondary" href="issues.html">Issues with collagen healing</a>
+    <a class="btn btn-secondary" href="about.html">About</a>
+  </nav>
   <div id="network">
     <div id="legend">
       <h3>Legend</h3>
