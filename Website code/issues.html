@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Issues with collagen healing</title>
+    <title>Collagen healing</title>
 
 <style>
   :root {
@@ -27,7 +27,7 @@
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
     padding: 48px 16px 64px;
     line-height: 1.5;
   }
@@ -37,7 +37,7 @@
     max-width: 1100px;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: flex-start;
     gap: 32px;
   }
 
@@ -45,12 +45,16 @@
     font-size: clamp(2rem, 5vw, 3.4rem);
     font-weight: 800;
     letter-spacing: -0.02em;
-    text-align: center;
+    text-align: left;
     background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
   }
+
+  h2 { text-align: left; }
+
+  ul { padding-left: 20px; }
 
   .button-row { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
 
@@ -88,13 +92,52 @@
 <body>
 
 <div class="container">
-  <h1>Issues with collagen healing</h1>
+  <h1>Information</h1>
   <nav class="button-row">
-    <a class="btn btn-primary" href="Code.HTML">Home</a>
-    <a class="btn btn-secondary" href="issues.html" aria-current="page" aria-disabled="true" tabindex="-1">Issues with collagen healing</a>
+    <a class="btn btn-primary" href="Code.HTML">Network</a>
+    <a class="btn btn-secondary" href="issues.html" aria-current="page" aria-disabled="true" tabindex="-1">Collagen healing</a>
     <a class="btn btn-secondary" href="about.html">About</a>
   </nav>
-  <!-- Content to be added later -->
+
+  <section>
+    <h2 style="margin-bottom: 30px;">What collagen is</h2>
+    <ul>
+      <li>Collagen is the main structural protein of connective tissue (skin, tendon, bone, cartilage, blood vessels).</li>
+      <li>Its structure is a triple helix of three α-chains, built from a repeating Gly–X–Y sequence where X and Y are often proline and hydroxyproline.</li>
+      <li>Key types:
+        <ul>
+          <li><strong>Type I:</strong> skin, tendon, bone; mature scars</li>
+          <li><strong>Type III:</strong> early wound tissue, blood vessels</li>
+          <li><strong>Type IV:</strong> basement membranes</li>
+          <li><strong>Type II:</strong> cartilage</li>
+        </ul>
+      </li>
+      <li>It gives tissue tensile strength and acts as a scaffold that cells attach to and migrate along.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2 style="margin-bottom: 30px;">Collagen's role in each healing phase</h2>
+    <ul>
+      <li><strong>Haemostasis (minutes):</strong> collagen exposed by injury and activates platelets (via GPVI, α2β1 and von Willebrand factor), which starts clotting.</li>
+      <li><strong>Inflammation (days 1–4):</strong> collagen fragments attract neutrophils and macrophages.</li>
+      <li><strong>Proliferation (days 4–21):</strong>
+        <ul>
+          <li>Macrophages release TGF-β and PDGF, which bring in fibroblasts.</li>
+          <li>Fibroblasts lay down mostly <strong>type III collagen</strong> in granulation tissue.</li>
+          <li>Myofibroblasts contract the wound.</li>
+        </ul>
+      </li>
+      <li><strong>Remodelling (weeks to over a year):</strong>
+        <ul>
+          <li>Type III is replaced by <strong>type I</strong>.</li>
+          <li>Fibres become cross-linked and line up along the lines of stress.</li>
+        </ul>
+      </li>
+    </ul>
+  </section>
+
+
 </div>
 
 </body>
