@@ -1,5 +1,5 @@
 ## Mapping drug interactions – collagen tissue healing
-## Research question - Which existing drugs interact with proteins involved in collagen fibril organization
+## Research question - Which existing drugs interact with the proteins and processes involved in collagen tissue healing
 
 All of the data filtering was done through the SPARQL query
 ## The query: 
