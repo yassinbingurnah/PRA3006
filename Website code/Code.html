@@ -292,7 +292,7 @@
   <h1>Mapping Drug interactions - Collagen tissue healing</h1>
   <nav class="button-row">
     <!-- Already on the home page, so Home is disabled here -->
-    <a class="btn btn-primary" href="Code.HTML" aria-current="page" aria-disabled="true" tabindex="-1">Network</a>
+    <a class="btn btn-primary" href="Code.html" aria-current="page" aria-disabled="true" tabindex="-1">Network</a>
     <a class="btn btn-secondary" href="issues.html">Collagen healing</a>
     <a class="btn btn-secondary" href="about.html">About</a>
   </nav>
@@ -318,7 +318,8 @@ WHERE {
     "GO:0030198"   # extracellular matrix organization
     "GO:0042060"   # wound healing
   }
-  ?process wdt:P686 ?goID .               
+  ?process wdt:P686 ?goID .     
+
   ?protein wdt:P682 ?process .            
 
   { ?drug wdt:P129 ?protein . }         
@@ -348,24 +349,28 @@ fetch(`${sparqlEndpoint}?query=${encodeURIComponent(sparqlQuery)}&format=json`)
       const process = result.process.value;
 
       // Add unique nodes
-      if (!nodes.some(node => node.id === drug)) {
+      if (!nodes.some(node => node.id === drug)) { // if no nodes have the same id as the drug, add it to the nodes array
         nodes.push({ id: drug, label: result.drugLabel.value, type: "drug" });
       }
-      if (!nodes.some(node => node.id === protein)) {
+      if (!nodes.some(node => node.id === protein)) { //
         nodes.push({ id: protein, label: result.proteinLabel.value, type: "protein" });
       }
-      if (!nodes.some(node => node.id === process)) {
+      if (!nodes.some(node => node.id === process)) {  // if no nodes have the same id as the process, add it to the nodes array
         nodes.push({ id: process, label: result.processLabel.value, type: "process" });
       }
 
       // Add unique links
-      if (!links.some(l => l.source === drug && l.target === protein)) {
-        links.push({ source: drug, target: protein });      // drug targets protein
+      if (!links.some(l => l.source === drug && l.target === protein)) { // if no links have the same source and target as the drug and protein, add it to the links array
+        links.push({ source: drug, target: protein });      
       }
-      if (!links.some(l => l.source === protein && l.target === process)) {
-        links.push({ source: protein, target: process });   // protein is part of process
+      if (!links.some(l => l.source === protein && l.target === process)) { // if no links have the same source and target as the protein and process, add it to the links array
+        links.push({ source: protein, target: process });    
       }
     });
+    
+//these if statements ensure that each node and link is only added once, preventing duplicates in the graph data. each 
+// link is from each row of the json results, since there are 3 results per row (drug, protein, process), we create 2 links: drug->protein and protein->process.
+//  the if statements check if those links already exist in the links array before adding them.
 
     console.log("Nodes:", nodes);
     console.log("Links:", links);
@@ -379,6 +384,9 @@ fetch(`${sparqlEndpoint}?query=${encodeURIComponent(sparqlQuery)}&format=json`)
 function createInteractiveNetwork(nodes, links) {
   console.log("Drawing network with", nodes.length, "nodes and", links.length, "links");
 
+
+// measuring the size of the container and the tooltip for the network graph, earlier css decides how big the container is. 
+// tooltip is the little box that appears when you hover over a node.
   const container = document.getElementById("network");
   const width = container.clientWidth;
   const height = container.clientHeight;
